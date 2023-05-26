@@ -13,6 +13,16 @@ import {
 } from "@web3auth/base";
 import { OpenloginAdapter } from "@web3auth/openlogin-adapter";
 
+import {
+  Ed25519Keypair,
+  Ed25519PublicKey,
+  JsonRpcProvider,
+  // Network,
+  RawSigner,
+} from "@mysten/sui.js";
+
+import { getED25519Key } from "@toruslabs/openlogin-ed25519";
+
 // RPC libraries for blockchain calls
 // import RPC from "./evm.web3";
 import RPC from "./evm.ethers";
@@ -157,6 +167,38 @@ function App() {
         idToken,
       });
       if (web3authSfaprovider) {
+        // Generate a new Keypair
+        console.log("web3authSfaprovider", web3authSfaprovider);
+        const privateKey = await web3authSfaprovider?.request({
+          method: "private_key",
+        });
+
+        const Ed25519SecretKey = getED25519Key(privateKey as string);
+        const Ed25519PrivateKey = Ed25519SecretKey.sk.slice(0, 32);
+
+        console.log("privateKey", privateKey);
+        console.log("Ed25519SecretKey", Ed25519SecretKey);
+        console.log("Ed25519PrivateKey", Ed25519PrivateKey);
+        // // const buf = Buffer.from(privateKey as any, "base64");
+
+        // const privateKeyEd25519Buffer = Buffer.from(privateKeyEd25519, "hex");
+
+        // console.log("privateKeyEd25519Buffer", privateKeyEd25519Buffer);
+        const keyPair = Ed25519Keypair.fromSecretKey(
+          // privateKeyEd25519Buffer.slice(1)
+          Ed25519PrivateKey
+        );
+        console.log("keyPair", keyPair);
+        const provider = new JsonRpcProvider();
+        const signer = new RawSigner(keyPair, provider);
+
+        const suiPublicKey = new Ed25519PublicKey(
+          keyPair.getPublicKey().toString()
+        );
+        const address = suiPublicKey.toSuiAddress();
+        console.log("address", address);
+        console.log("signer", signer);
+
         setProvider(web3authSfaprovider);
       }
       setUsesSfaSDK(true);
